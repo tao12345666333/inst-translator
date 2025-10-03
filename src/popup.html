@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>inst-translator</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; }
+      /* Ensure popup is comfortably large (Chrome popup sizes to content) */
+      body {
+        font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;
+        min-width: 700px;
+        min-height: 600px;
+      }
+      .container {
+        box-sizing: border-box;
+        padding: 12px;
+        width: 100%;
+        height: 100%;
+        max-width: 100vw;
+      }
+      .row { display: flex; gap: 8px; align-items: center; }
+      textarea {
+        width: 100%;
+        height: 320px;
+        min-height: 180px;
+        resize: vertical;
+        box-sizing: border-box;
+        font-size: 14px;
+        padding: 8px;
+      }
+      .muted { color: #666; font-size: 12px; }
+      .out { white-space: pre-wrap; font-size: 14px; }
+      .controls { margin: 8px 0; display:flex; gap:8px; align-items:center; }
+      select, button { height: 30px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row" style="justify-content: space-between;">
+<h3 style="margin: 0;">inst-translator</h3>
+        <div class="muted">Chrome v138+ • On-device</div>
+      </div>
+
+      <div class="controls">
+        <label>Source:</label>
+        <select id="sourceLang">
+          <option value="auto">Auto</option>
+          <option value="en">English</option>
+          <option value="zh-Hans">简体中文</option>
+          <option value="ja">日本語</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <label>Target:</label>
+        <select id="targetLang">
+          <option value="zh-Hans">简体中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <button id="copyBtn" title="Copy translation">Copy</button>
+      </div>
+
+      <textarea id="input" placeholder="Type or paste text here…"></textarea>
+      <div class="muted" id="status">Idle</div>
+      <div class="out" id="output"></div>
+    </div>
+
+    <script src="/src/popup.js" type="module"></script>
+  </body>
+</html>

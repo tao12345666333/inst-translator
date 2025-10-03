@@ -1,0 +1,28 @@
+/* Overlay panel for in-page translator frame */
+#st-overlay {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 720px;
+  max-width: min(96vw, 880px);
+  z-index: 2147483647;
+  border-radius: 12px;
+  background: var(--st-bg, #ffffff);
+  color: inherit;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.22), 0 3px 10px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+#st-overlay iframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  border: 0;
+}
+@media (prefers-color-scheme: dark) {
+  #st-overlay {
+    --st-bg: #1e1f22;
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.6), 0 3px 10px rgba(0,0,0,0.45);
+  }
+}
