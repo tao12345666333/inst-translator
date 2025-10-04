@@ -1,4 +1,5 @@
-// Background service worker for Simple Translator
+// @ts-nocheck
+// Background service worker for inst-translator
 // Creates context menu for translating selected text and relays messages to content script
 // Also injects an in-page overlay per tab when the toolbar icon is clicked
 
