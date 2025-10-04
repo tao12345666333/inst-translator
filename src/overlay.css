@@ -3,20 +3,26 @@
   position: fixed;
   top: 16px;
   right: 16px;
-  width: 720px;
-  max-width: min(96vw, 880px);
+  /* Clamp size within viewport so the whole panel stays visible */
+  width: min(720px, calc(100vw - 32px));
+  /* Use small/dynamic viewport units for robust sizing across OS chrome */
+  height: min(560px, calc(100svh - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100svh - 32px);
   z-index: 2147483647;
   border-radius: 12px;
   background: var(--st-bg, #ffffff);
   color: inherit;
   box-shadow: 0 12px 36px rgba(0,0,0,0.22), 0 3px 10px rgba(0,0,0,0.12);
   border: 1px solid rgba(0,0,0,0.08);
-  overflow: hidden;
+  overflow: hidden; /* prevent page scroll due to inner content */
+  box-sizing: border-box;
+  display: flex;
 }
 #st-overlay iframe {
   display: block;
   width: 100%;
-  height: 560px;
+  height: 100%;
   border: 0;
 }
 @media (prefers-color-scheme: dark) {
