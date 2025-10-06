@@ -7,7 +7,7 @@ A minimal Chrome extension (inst-translator) that:
 
 ## Screenshot
 
-![inst-translator screenshot](https://github.com/user-attachments/assets/e8c79b26-80ce-4e85-9e64-31c7c72e223d)
+![inst-translator screenshot](demo.png)
 
 ## Requirements
 - Google Chrome 138 or newer
