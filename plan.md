@@ -17,13 +17,13 @@
 - 升级 popup 与页内 overlay 的 UI 控件，支持动作选择、自定义指令、运行/停止、复制结果。
 - 对齐当前项目结构（同一套脚本在 popup 与 iframe overlay 运行），并补充状态提示（准备中/下载模型/执行中/完成/报错）。
 - 保留并优化源/目标语言设置（主要用于翻译动作）。
-- 状态：`in_progress`
+- 状态：`completed`
 
 ### 功能 3：页面流程与扩展行为收敛（commit #3）
 - 调整后台与内容脚本消息流：右键选中文本直接打开统一 overlay 并预填文本。
 - 收敛旧的“轻量翻译浮层”逻辑，避免与新 Prompt 流程冲突。
 - 更新 manifest 元信息（最小 Chrome 版本/描述）以匹配 Prompt API 能力边界。
-- 状态：`pending`
+- 状态：`in_progress`
 
 ## 验证
 - 执行 `npm run build` 作为当前项目可用校验。
