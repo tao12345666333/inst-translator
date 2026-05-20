@@ -20,7 +20,8 @@ export default defineConfig({
       targets: [
         { src: 'icons/*', dest: 'icons' },
         { src: 'src/frame-boot.js', dest: 'src' },
-        { src: 'src/popup.js', dest: 'src' }
+        { src: 'src/popup.js', dest: 'src' },
+        { src: 'src/ai.js', dest: 'src' }
       ]
     })
   ],
