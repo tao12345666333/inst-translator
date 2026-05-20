@@ -23,7 +23,7 @@
 - 调整后台与内容脚本消息流：右键选中文本直接打开统一 overlay 并预填文本。
 - 收敛旧的“轻量翻译浮层”逻辑，避免与新 Prompt 流程冲突。
 - 更新 manifest 元信息（最小 Chrome 版本/描述）以匹配 Prompt API 能力边界。
-- 状态：`in_progress`
+- 状态：`completed`
 
 ## 验证
 - 执行 `npm run build` 作为当前项目可用校验。
