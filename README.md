@@ -1,101 +1,105 @@
-# inst-translator (Chrome Extension)
+# inst-translator (Chrome Extension, Prompt API)
 
-A minimal Chrome extension (inst-translator) that:
-- Translates selected text on any page via a context menu
-- Opens an in-page panel to translate arbitrary text
-- Uses Chrome's on-device AI: `Translator` and `LanguageDetector` (Chrome v138+)
+`inst-translator` is a Chrome extension that runs **fully on-device** using Chrome Built-in AI.
+
+Current core stack:
+- Prompt API (`LanguageModel`) for generation tasks
+- LanguageDetector API for auto source-language detection (translate mode)
+- MV3 extension + in-page overlay UI
 
 ## Screenshot
 
 ![inst-translator screenshot](demo.png)
 
 ## Requirements
-- Google Chrome 138 or newer
+
+- Google Chrome **148+**
+- A device/browser profile where Built-in AI is available
 
 ## Install (Load Unpacked)
-Recommended (build → load dist/):
-1. `pnpm i`
+
+Recommended:
+1. `pnpm install`
 2. `pnpm build`
 3. Open `chrome://extensions`
-4. Enable "Developer mode"
-5. Click "Load unpacked" and select the `dist/` folder
+4. Enable **Developer mode**
+5. Click **Load unpacked** and select `dist/`
 
-For development (watch → load dist/):
-1. `pnpm i`
-2. `pnpm dev` (keeps copying into `dist/`)
-3. Open `chrome://extensions` and load the `dist/` folder
-4. After code changes, click "Reload" on the extension card
+Dev watch mode:
+1. `pnpm install`
+2. `pnpm dev`
+3. Load `dist/` in `chrome://extensions`
+4. After code changes, click **Reload** on the extension card
 
 ## Usage
-- Select text on a web page, right-click, and choose "Translate selection" to see an anchored card with translation
-- Click the toolbar icon to open an in-page panel; paste or type text and it translates automatically
-- Both modes support:
-  - Auto language detection if "Source: Auto" is selected (uses LanguageDetector)  
-  - Choosing target language (right-click defaults to Chinese; toolbar panel defaults to English)
-  - Copying translated text
-  - Strict line-by-line translation preserving original formatting
 
-## Features
-- **Anchored Selection Translation**: Right-click context menu shows translation card near selected text
-- **In-Page Panel**: Click toolbar icon opens a larger panel for extended translation work
-- **Line-Preserving Translation**: Maintains original line breaks and paragraph structure
-- **On-Device AI**: No external network calls; uses Chrome's built-in Translator API
-- **ESC to Close**: Both panel and cards can be closed with Escape key or close buttons
+### Open UI
+- Select text on a page → right-click → **Open inst-translator with selection**
+- Or click the extension toolbar icon
 
-## Development
+### Action modes
+- `translate`
+- `summarize`
+- `polish`
+- `explain`
+- `custom` (with custom instruction)
 
-This project uses pnpm + TypeScript + Vite (vite-plugin-web-extension). The plugin bundles TS entry points from manifest.json and rewrites the manifest to the built files. In-page overlay references built chunks via the plugin's chunk URL mapping, so paths remain valid after bundling.
+### Language options (current UI scope)
+- Source: `auto / en / zh-Hans / ja / es / fr / de`
+- Target: `en / zh-Hans / ja / es / fr / de`
 
-- Install deps
-  - `pnpm i`
-- Development (watch copy to dist/)
-  - `pnpm dev`
-  - Load `dist/` as an unpacked extension in `chrome://extensions`
-- Production build
-  - `pnpm build`
+> Note: Prompt API itself may support broader languages, but this project currently exposes only the options above in UI.
 
-What the build does:
-- Bundles background/content scripts (TS) and rewrites manifest to hashed file names
-- Ensures web_accessible_resources include the chunks referenced from code (overlay → about:blank frame)
-- Copies icons referenced by manifest
+## Build/Runtime Notes
 
-Note: For the about:blank frame, overlay resolves chunk URLs at runtime using the plugin-provided mapping, then sets the iframe content to load those built scripts.
+- First run may trigger model download; progress is shown in status text.
+- The in-page overlay runs in an iframe (`about:blank`) and loads extension scripts via `chrome.runtime.getURL(...)`.
+- Scripts loaded from page context must be listed in `web_accessible_resources` (including `src/popup.js`, `src/frame-boot.js`, `src/ai.js`).
 
-## Notes
-- Models may download on first use. Progress is shown in the UI.
-- If the API is unavailable on a page, try another normal page (non-privileged).
-- No external network LLMs are used; translation runs on-device via Chrome.
+## Project Structure
 
-## File layout
-```
+```text
 inst-translator/
 ├─ manifest.json
-├─ icons/
-│  ├─ icon16.png
-│  ├─ icon32.png
-│  ├─ icon48.png
-│  └─ icon128.png
 ├─ src/
-│  ├─ background.ts/js     # background service worker (TS entry)
-│  ├─ content.ts/js        # selection card (right‑click) (TS entry wraps JS now)
-│  ├─ overlay.ts           # in‑page panel orchestrator (TS entry; resolves chunk URLs)
-│  ├─ overlay.css          # panel styles (injected via content_scripts)
-│  ├─ frame-boot.ts/js     # frame boot (TS entry wraps JS now)
-│  └─ popup.ts/js          # translator logic for panel (TS entry wraps JS now)
-└─ dist/                   # build output (hashed bundles + rewritten manifest)
+│  ├─ ai.js               # Prompt API wrapper (availability/session/prompt streaming)
+│  ├─ popup.js            # Shared action execution logic used by popup + iframe UI
+│  ├─ overlay.ts          # In-page overlay host / iframe bootstrap
+│  ├─ frame-boot.js       # Frame bridge (focus/close/message)
+│  ├─ background.ts       # Context menu + action click message dispatch
+│  ├─ content.js          # Selection text extraction helper
+│  └─ overlay.css         # Overlay shell styles
+└─ dist/                  # Built extension bundle
 ```
 
 ## Troubleshooting
+
+- **`Denying load of chrome-extension://.../src/ai.js`**
+  - Cause: resource is loaded by page context but missing from `web_accessible_resources`.
+  - Fix: add `src/ai.js` into `manifest.json > web_accessible_resources[].resources`, rebuild, reload extension.
+
 - Toolbar click has no effect
-  - Ensure you loaded `dist/`, not the source folder.
-  - If you see 404 for chunk paths, run `pnpm i && pnpm build` and reload the extension (manifest must point to built files).
-- Panel invisible but exists in DOM
-  - Make sure `overlay.css` is injected via manifest (content_scripts). Reload the extension after build.
-- ESC/X does not close the panel
-  - Some pages block key events; try another page. If persistent, report with URL for a page‑specific workaround.
+  - Ensure `dist/` is loaded (not source root).
+  - Rebuild and reload extension.
+
+- Built-in AI unavailable
+  - Try a normal web page (not Chrome internal/restricted pages).
+  - Confirm Chrome version and Built-in AI availability in your environment.
+
+## Optimization ideas / Candidate features
+
+1. **Language list auto-sync**
+   - Query runtime availability and dynamically show only valid language options.
+2. **Prompt templates**
+   - Preset templates for email rewrite, PR summary, glossary-preserving translation.
+3. **Output quality controls**
+   - Add optional temperature/style/length controls per mode.
+4. **History & pinned snippets**
+   - Save recent runs and pin reusable custom prompts locally.
+5. **Structured output mode**
+   - For `custom`, optionally request JSON schema output and validate parse result.
 
 ## Acknowledgements
 
-- Inspired by:
-  - [openai-translator](https://github.com/openai-translator/openai-translator/)
-  - [fancy-translator](https://github.com/daidr/fancy-translator)
+- [openai-translator](https://github.com/openai-translator/openai-translator/)
+- [fancy-translator](https://github.com/daidr/fancy-translator)
