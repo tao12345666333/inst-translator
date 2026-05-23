@@ -124,18 +124,26 @@ select,button{height:30px}
     }
   }
 
+  function openOverlayWithText(text) {
+    const res = ensureOverlay();
+    pendingText = text || '';
+    if (!res.created && pendingText) {
+      postSetText(res.frame);
+      pendingText = '';
+    }
+  }
+
   // Receive commands from background (always-on listener as content script)
   chrome.runtime?.onMessage?.addListener((msg) => {
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'st-open-with-text') {
-      const res = ensureOverlay();
-      pendingText = msg.text || '';
-      // If overlay already existed (frame listeners ready), set immediately; otherwise wait for st-ready
-      if (!res.created && pendingText) {
-        postSetText(res.frame);
-        pendingText = '';
-      }
+      openOverlayWithText(msg.text || '');
     }
+  });
+
+  window.addEventListener('st-open-with-text', (event: any) => {
+    const text = event?.detail?.text || '';
+    openOverlayWithText(text);
   });
 
   function removeOverlay() {
