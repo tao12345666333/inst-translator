@@ -3,6 +3,7 @@
 
 (() => {
   const TRIGGER_ID = 'st-selection-trigger';
+  const TRIGGER_SIZE = 36;
   const OFFSET = 10;
   let selectedTextForTrigger = '';
 
@@ -54,30 +55,28 @@
     el.title = 'Translate selection';
     Object.assign(el.style, {
       position: 'fixed',
-      width: '28px',
-      height: '28px',
+      width: `${TRIGGER_SIZE}px`,
+      height: `${TRIGGER_SIZE}px`,
       borderRadius: '999px',
-      border: '1px solid rgba(0,0,0,0.12)',
-      background: '#fff',
-      color: '#111',
-      fontSize: '13px',
-      fontWeight: '700',
-      lineHeight: '24px',
-      textAlign: 'center',
+      border: 'none',
+      background: 'transparent',
       cursor: 'pointer',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.22)',
       zIndex: '2147483646',
       padding: '0',
+      outline: 'none',
+      appearance: 'none',
+      WebkitAppearance: 'none',
       display: 'none'
     });
     const icon = document.createElement('img');
     icon.src = chrome.runtime.getURL('icons/icon32.png');
     icon.alt = 'Translate';
     Object.assign(icon.style, {
-      width: '18px',
-      height: '18px',
+      width: '100%',
+      height: '100%',
       display: 'block',
-      margin: '0 auto',
+      objectFit: 'contain',
       pointerEvents: 'none'
     });
     el.appendChild(icon);
@@ -110,8 +109,8 @@
     const el = ensureTrigger();
     selectedTextForTrigger = text;
 
-    const left = Math.min(window.innerWidth - 34, Math.max(8, rect.right + OFFSET));
-    const top = Math.min(window.innerHeight - 34, Math.max(8, rect.bottom + OFFSET));
+    const left = Math.min(window.innerWidth - TRIGGER_SIZE - 8, Math.max(8, rect.right + OFFSET));
+    const top = Math.min(window.innerHeight - TRIGGER_SIZE - 8, Math.max(8, rect.bottom + OFFSET));
 
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;

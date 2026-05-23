@@ -39,6 +39,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "icons/*",
         "assets/*",
         "src/overlay.css",
         "src/frame-boot.js",
