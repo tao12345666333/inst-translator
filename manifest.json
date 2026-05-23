@@ -42,7 +42,8 @@
         "assets/*",
         "src/overlay.css",
         "src/frame-boot.js",
-        "src/popup.js"
+        "src/popup.js",
+        "src/ai.js"
       ],
       "matches": ["<all_urls>"]
     }
