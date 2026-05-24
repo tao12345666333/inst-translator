@@ -53,8 +53,8 @@ Dev watch mode:
 ## Build/Runtime Notes
 
 - First run may trigger model download; progress is shown in status text.
-- The in-page overlay runs in an iframe (`about:blank`) and loads extension scripts via `chrome.runtime.getURL(...)`.
-- Scripts loaded from page context must be listed in `web_accessible_resources` (including `src/popup.js`, `src/frame-boot.js`, `src/ai.js`).
+- The in-page overlay runs in an `about:blank` iframe and injects the `src/frame.html` template + extension scripts via `chrome.runtime.getURL(...)`.
+- Resources embedded by normal pages must be listed in `web_accessible_resources` (for example `src/frame.html`, `src/popup.js`, `src/frame-boot.js`, `icons/*`).
 
 ## Project Structure
 
@@ -62,21 +62,22 @@ Dev watch mode:
 inst-translator/
 ├─ manifest.json
 ├─ src/
-│  ├─ ai.js               # Prompt API wrapper (availability/session/prompt streaming)
-│  ├─ popup.js            # Shared action execution logic used by popup + iframe UI
+│  ├─ ai.ts               # Prompt API wrapper (availability/session/prompt streaming)
+│  ├─ popup.ts            # Shared action execution logic used by popup + iframe UI
 │  ├─ overlay.ts          # In-page overlay host / iframe bootstrap
-│  ├─ frame-boot.js       # Frame bridge (focus/close/message)
+│  ├─ frame-boot.ts       # Frame bridge (focus/close/message)
+│  ├─ frame.html          # Shared UI document for in-page iframe
 │  ├─ background.ts       # Context menu + action click message dispatch
-│  ├─ content.js          # Selection text extraction helper
+│  ├─ content.ts          # Selection text extraction helper
 │  └─ overlay.css         # Overlay shell styles
 └─ dist/                  # Built extension bundle
 ```
 
 ## Troubleshooting
 
-- **`Denying load of chrome-extension://.../src/ai.js`**
+- **`Denying load of chrome-extension://.../icons/icon32.png`** (or `src/frame.html`)
   - Cause: resource is loaded by page context but missing from `web_accessible_resources`.
-  - Fix: add `src/ai.js` into `manifest.json > web_accessible_resources[].resources`, rebuild, reload extension.
+  - Fix: add the resource (or wildcard like `icons/*`) into `manifest.json > web_accessible_resources[].resources`, rebuild, reload extension.
 
 - Toolbar click has no effect
   - Ensure `dist/` is loaded (not source root).

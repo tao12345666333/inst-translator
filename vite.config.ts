@@ -2,9 +2,6 @@ import { defineConfig } from 'vite'
 import webExtension from 'vite-plugin-web-extension'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-// Bundle with vite-plugin-web-extension (like openai-translator):
-// - TS entries from manifest are built and manifest is rewritten to hashed files
-// - Additional inputs (frame scripts) are bundled and exposed via chunk URL mapping
 export default defineConfig({
   plugins: [
     webExtension({
@@ -15,13 +12,11 @@ export default defineConfig({
         'src/popup.ts'
       ]
     }),
-    // Copy static assets referenced by manifest at fixed paths
     viteStaticCopy({
       targets: [
         { src: 'icons/*', dest: 'icons' },
-        { src: 'src/frame-boot.js', dest: 'src' },
-        { src: 'src/popup.js', dest: 'src' },
-        { src: 'src/ai.js', dest: 'src' }
+        { src: 'src/frame.html', dest: 'src' },
+        { src: 'src/popup.html', dest: 'src' }
       ]
     })
   ],

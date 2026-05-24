@@ -25,7 +25,6 @@
   "permissions": [
     "contextMenus",
     "storage",
-    "scripting",
     "activeTab"
   ],
   "content_scripts": [
@@ -42,9 +41,9 @@
         "icons/*",
         "assets/*",
         "src/overlay.css",
+        "src/frame.html",
         "src/frame-boot.js",
-        "src/popup.js",
-        "src/ai.js"
+        "src/popup.js"
       ],
       "matches": ["<all_urls>"]
     }
