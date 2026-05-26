@@ -80,8 +80,8 @@ function setupCloseButton() {
   closeButton.addEventListener('click', (event) => sendClose(event))
 }
 
-postReady()
 setupMessaging()
 setupEscClose()
 setupCloseButton()
 focusInput()
+postReady()

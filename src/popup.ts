@@ -19,7 +19,7 @@ type StorageBridgeResponse = {
 
 const STORAGE_KEY = 'st:prompt-ui:v1'
 const RUN_DEBOUNCE_MS = 550
-const STORAGE_BRIDGE_TIMEOUT_MS = 2000
+const STORAGE_BRIDGE_TIMEOUT_MS = 6000
 
 const inputEl = queryRequired<HTMLTextAreaElement>('input')
 const outputEl = queryRequired<HTMLElement>('output')
@@ -96,7 +96,7 @@ async function restoreSettings() {
 }
 
 function isExtensionStorageAvailable(): boolean {
-  return Boolean(chrome?.storage?.local)
+  return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local)
 }
 
 function isInPageOverlayFrame(): boolean {
@@ -131,7 +131,11 @@ async function getStorageValue<T>(key: string): Promise<T | undefined> {
     return data?.[key] as T | undefined
   }
   if (isInPageOverlayFrame()) {
-    return await sendStorageBridgeRequest<T>({ type: 'st-storage-get', key })
+    try {
+      return await sendStorageBridgeRequest<T>({ type: 'st-storage-get', key })
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }
@@ -142,7 +146,11 @@ async function setStorageValue(key: string, value: unknown): Promise<void> {
     return
   }
   if (isInPageOverlayFrame()) {
-    await sendStorageBridgeRequest<void>({ type: 'st-storage-set', key, value })
+    try {
+      await sendStorageBridgeRequest<void>({ type: 'st-storage-set', key, value })
+    } catch {
+      // ignore storage bridge failures in frame mode
+    }
   }
 }
 
@@ -212,7 +220,11 @@ async function runAction(options: { force?: boolean } = {}) {
   } finally {
     isRunning = false
     updateControls()
-    await persistSettings()
+    try {
+      await persistSettings()
+    } catch {
+      // ignore persistence failure
+    }
   }
 }
 
@@ -262,7 +274,11 @@ void (async () => {
     callback?.(data)
   })
 
-  await restoreSettings()
+  try {
+    await restoreSettings()
+  } catch {
+    // ignore restore failures in frame mode
+  }
   updateControls()
 
   try {
