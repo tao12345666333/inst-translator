@@ -7,13 +7,14 @@ type PromptSession = {
   destroy?: () => void
 }
 
-type PromptSessionCtor = {
-  availability: () => Promise<string>
+type PromptSessionFactory = {
+  capabilities?: () => Promise<unknown> | unknown
+  availability?: () => Promise<unknown> | unknown
   create: (options: {
     temperature: number
     topK: number
     monitor?: (monitor: EventTarget) => void
-  }) => Promise<PromptSession>
+  }) => Promise<PromptSession> | PromptSession
 }
 
 type LanguageDetectorCtor = {
@@ -39,17 +40,24 @@ export const DEFAULT_ACTION_MODE: PromptMode = 'translate'
 let sharedSessionPromise: Promise<PromptSession> | null = null
 let sharedSessionKey = ''
 let lastDetectedLanguageCache: { text: string; language: string } | null = null
+const downloadProgressListeners = new Set<(progress: number) => void>()
 
-function getLanguageModelCtor(): PromptSessionCtor | null {
+function getLanguageModelFactory(): PromptSessionFactory | null {
+  const aiFromGlobal = (globalThis as unknown as { ai?: Record<string, unknown> }).ai
+  const aiFromWindow = (window as unknown as { ai?: Record<string, unknown> }).ai
   const maybeWindow = window as unknown as {
-    LanguageModel?: PromptSessionCtor
-    ai?: { LanguageModel?: PromptSessionCtor }
+    LanguageModel?: PromptSessionFactory
+    ai?: { LanguageModel?: PromptSessionFactory; languageModel?: PromptSessionFactory }
   }
   const maybeGlobal = globalThis as unknown as {
-    LanguageModel?: PromptSessionCtor
-    ai?: { LanguageModel?: PromptSessionCtor }
+    LanguageModel?: PromptSessionFactory
+    ai?: { LanguageModel?: PromptSessionFactory; languageModel?: PromptSessionFactory }
   }
   return (
+    maybeGlobal.ai?.languageModel ||
+    maybeWindow.ai?.languageModel ||
+    (aiFromGlobal?.languageModel as PromptSessionFactory | undefined) ||
+    (aiFromWindow?.languageModel as PromptSessionFactory | undefined) ||
     maybeGlobal.LanguageModel ||
     maybeGlobal.ai?.LanguageModel ||
     maybeWindow.LanguageModel ||
@@ -80,23 +88,66 @@ function clampProgress(value: number): number {
 }
 
 export async function getPromptAvailability(): Promise<string> {
-  const Ctor = getLanguageModelCtor()
-  if (!Ctor || typeof Ctor.availability !== 'function') return 'unavailable'
+  const factory = getLanguageModelFactory()
+  if (!factory) return 'unavailable'
+
   try {
-    return await Ctor.availability()
+    if (typeof factory.capabilities === 'function') {
+      const capabilities = await factory.capabilities()
+      const available = (capabilities as { available?: unknown })?.available
+      const normalized = String(available || '').toLowerCase()
+      if (normalized === 'readily' || normalized === 'available' || normalized === 'after-download') return 'available'
+      if (normalized === 'no') return 'unavailable'
+    }
+    if (typeof factory.availability === 'function') {
+      return String(await factory.availability())
+    }
+    return 'unavailable'
   } catch {
     return 'unavailable'
   }
 }
 
+function dispatchDownloadProgress(progress: number) {
+  for (const listener of downloadProgressListeners) {
+    try {
+      listener(progress)
+    } catch {
+      // ignore listener failures
+    }
+  }
+}
+
+async function withAbort<T>(value: Promise<T> | T, signal?: AbortSignal): Promise<T> {
+  if (!signal) return Promise.resolve(value)
+  if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+
+  return await new Promise<T>((resolve, reject) => {
+    const onAbort = () => {
+      signal.removeEventListener('abort', onAbort)
+      reject(new DOMException('Aborted', 'AbortError'))
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+
+    Promise.resolve(value)
+      .then((result) => {
+        signal.removeEventListener('abort', onAbort)
+        resolve(result)
+      })
+      .catch((error) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(error)
+      })
+  })
+}
+
 async function createPromptSession(options: {
-  onDownloadProgress?: (progress: number) => void
   temperature?: number
   topK?: number
 } = {}): Promise<PromptSession> {
-  const { onDownloadProgress, temperature = 0.2, topK = 3 } = options
-  const Ctor = getLanguageModelCtor()
-  if (!Ctor || typeof Ctor.create !== 'function') {
+  const { temperature = 0.2, topK = 3 } = options
+  const factory = getLanguageModelFactory()
+  if (!factory || typeof factory.create !== 'function') {
     throw new Error('Prompt API unavailable. Please update Chrome and enable built-in AI.')
   }
 
@@ -105,16 +156,16 @@ async function createPromptSession(options: {
     throw new Error('Prompt API is unavailable on this device/browser.')
   }
 
-  return Ctor.create({
+  return await Promise.resolve(factory.create({
     temperature,
     topK,
     monitor(monitor) {
       monitor?.addEventListener?.('downloadprogress', ((event: Event) => {
         const loaded = (event as Event & { loaded?: number }).loaded ?? 0
-        onDownloadProgress?.(clampProgress(loaded))
+        dispatchDownloadProgress(clampProgress(loaded))
       }) as EventListener)
     }
-  })
+  }))
 }
 
 async function getOrCreateSharedSession(options: {
@@ -122,6 +173,9 @@ async function getOrCreateSharedSession(options: {
   temperature?: number
   topK?: number
 }): Promise<PromptSession> {
+  if (options.onDownloadProgress) {
+    downloadProgressListeners.add(options.onDownloadProgress)
+  }
   const temperature = options.temperature ?? 0.2
   const topK = options.topK ?? 3
   const key = `${temperature}:${topK}`
@@ -137,6 +191,10 @@ async function getOrCreateSharedSession(options: {
     sharedSessionPromise = null
     sharedSessionKey = ''
     throw error
+  } finally {
+    if (options.onDownloadProgress) {
+      downloadProgressListeners.delete(options.onDownloadProgress)
+    }
   }
 }
 
@@ -291,11 +349,11 @@ export async function runPromptAction(options: {
   }
 
   onStatus?.('Preparing Prompt API…')
-  const sharedSession = await getOrCreateSharedSession({
+  const sharedSession = await withAbort(getOrCreateSharedSession({
     onDownloadProgress(progress) {
       onStatus?.(`Downloading model… ${Math.round(progress * 100)}%`)
     }
-  })
+  }), signal)
   const session = sharedSession.clone ? await sharedSession.clone() : sharedSession
 
   const prompt = buildPrompt({

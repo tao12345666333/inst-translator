@@ -9,8 +9,17 @@ type PopupSettings = {
   customPrompt: string
 }
 
+type StorageBridgeResponse = {
+  type: 'st-storage-response'
+  requestId: string
+  ok: boolean
+  value?: unknown
+  error?: string
+}
+
 const STORAGE_KEY = 'st:prompt-ui:v1'
 const RUN_DEBOUNCE_MS = 550
+const STORAGE_BRIDGE_TIMEOUT_MS = 2000
 
 const inputEl = queryRequired<HTMLTextAreaElement>('input')
 const outputEl = queryRequired<HTMLElement>('output')
@@ -27,6 +36,8 @@ let typingTimer = 0
 let activeAbortController: AbortController | null = null
 let isRunning = false
 let lastRequestedInputKey = ''
+let bridgeRequestSeq = 0
+const pendingStorageRequests = new Map<string, (response: StorageBridgeResponse) => void>()
 
 setDefaults()
 
@@ -66,25 +77,73 @@ function currentInputKey() {
 }
 
 async function persistSettings() {
-  if (!chrome?.storage?.local) return
   const payload: PopupSettings = {
     mode: (modeEl.value as ActionMode) || DEFAULT_ACTION_MODE,
     sourceLang: sourceEl.value,
     targetLang: targetEl.value,
     customPrompt: customPromptEl.value || ''
   }
-  await chrome.storage.local.set({ [STORAGE_KEY]: payload })
+  await setStorageValue(STORAGE_KEY, payload)
 }
 
 async function restoreSettings() {
-  if (!chrome?.storage?.local) return
-  const data = await chrome.storage.local.get(STORAGE_KEY)
-  const saved = data?.[STORAGE_KEY] as Partial<PopupSettings> | undefined
+  const saved = await getStorageValue<Partial<PopupSettings>>(STORAGE_KEY)
   if (!saved) return
   if (saved.mode) modeEl.value = saved.mode
   if (saved.sourceLang) sourceEl.value = saved.sourceLang
   if (saved.targetLang) targetEl.value = saved.targetLang
   if (typeof saved.customPrompt === 'string') customPromptEl.value = saved.customPrompt
+}
+
+function isExtensionStorageAvailable(): boolean {
+  return Boolean(chrome?.storage?.local)
+}
+
+function isInPageOverlayFrame(): boolean {
+  return window.parent !== window && !isExtensionStorageAvailable()
+}
+
+function sendStorageBridgeRequest<T>(payload: { type: 'st-storage-get'; key: string } | { type: 'st-storage-set'; key: string; value: unknown }): Promise<T | undefined> {
+  return new Promise((resolve, reject) => {
+    const requestId = `st-storage-${Date.now()}-${bridgeRequestSeq++}`
+    const timeout = window.setTimeout(() => {
+      pendingStorageRequests.delete(requestId)
+      reject(new Error('Storage bridge timeout'))
+    }, STORAGE_BRIDGE_TIMEOUT_MS)
+
+    pendingStorageRequests.set(requestId, (response) => {
+      window.clearTimeout(timeout)
+      pendingStorageRequests.delete(requestId)
+      if (!response.ok) {
+        reject(new Error(response.error || 'Storage bridge request failed'))
+        return
+      }
+      resolve(response.value as T | undefined)
+    })
+
+    window.parent.postMessage({ ...payload, requestId }, '*')
+  })
+}
+
+async function getStorageValue<T>(key: string): Promise<T | undefined> {
+  if (isExtensionStorageAvailable()) {
+    const data = await chrome.storage.local.get(key)
+    return data?.[key] as T | undefined
+  }
+  if (isInPageOverlayFrame()) {
+    return await sendStorageBridgeRequest<T>({ type: 'st-storage-get', key })
+  }
+  return undefined
+}
+
+async function setStorageValue(key: string, value: unknown): Promise<void> {
+  if (isExtensionStorageAvailable()) {
+    await chrome.storage.local.set({ [key]: value })
+    return
+  }
+  if (isInPageOverlayFrame()) {
+    await sendStorageBridgeRequest<void>({ type: 'st-storage-set', key, value })
+  }
 }
 
 function scheduleRun() {
@@ -196,6 +255,13 @@ copyBtnEl.addEventListener('click', async () => {
 })
 
 void (async () => {
+  window.addEventListener('message', (event: MessageEvent<StorageBridgeResponse>) => {
+    const data = event.data
+    if (!data || data.type !== 'st-storage-response') return
+    const callback = pendingStorageRequests.get(data.requestId)
+    callback?.(data)
+  })
+
   await restoreSettings()
   updateControls()
 

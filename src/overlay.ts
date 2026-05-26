@@ -7,6 +7,9 @@ declare global {
 type OverlayMessage = {
   type?: string
   text?: string
+  requestId?: string
+  key?: string
+  value?: unknown
 }
 
 let pendingText = ''
@@ -53,6 +56,11 @@ async function initializeFrameDocument(frame: HTMLIFrameElement): Promise<void> 
 function postSetText(frame: HTMLIFrameElement | null) {
   if (!frame?.contentWindow) return
   frame.contentWindow.postMessage({ type: 'st-set-text', text: pendingText || '' }, '*')
+}
+
+function postStorageResponse(target: MessageEventSource | null, payload: { requestId: string; ok: boolean; value?: unknown; error?: string }) {
+  if (!target || typeof (target as { postMessage?: unknown }).postMessage !== 'function') return
+  ;(target as WindowProxy).postMessage({ type: 'st-storage-response', ...payload }, '*')
 }
 
 function removeOverlay() {
@@ -105,6 +113,39 @@ function ensureOverlay(): { created: boolean; frame: HTMLIFrameElement | null } 
           pendingText = ''
         }
       }
+    }
+
+    const activeFrame = document.getElementById('st-overlay-frame')
+    const activeFrameWindow = activeFrame instanceof HTMLIFrameElement ? activeFrame.contentWindow : null
+    if (event.source !== activeFrameWindow) return
+
+    if (event.data.type === 'st-storage-get') {
+      const requestId = event.data.requestId || ''
+      const key = event.data.key || ''
+      if (!requestId || !key) return
+      chrome.storage.local
+        .get(key)
+        .then((result) => {
+          postStorageResponse(event.source, { requestId, ok: true, value: result?.[key] })
+        })
+        .catch((error: unknown) => {
+          postStorageResponse(event.source, { requestId, ok: false, error: String(error) })
+        })
+      return
+    }
+
+    if (event.data.type === 'st-storage-set') {
+      const requestId = event.data.requestId || ''
+      const key = event.data.key || ''
+      if (!requestId || !key) return
+      chrome.storage.local
+        .set({ [key]: event.data.value })
+        .then(() => {
+          postStorageResponse(event.source, { requestId, ok: true })
+        })
+        .catch((error: unknown) => {
+          postStorageResponse(event.source, { requestId, ok: false, error: String(error) })
+        })
     }
   }
   window.addEventListener('message', messageHandler)
