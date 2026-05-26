@@ -17,7 +17,7 @@
     "@types/node": "^22.15.31",
     "@types/chrome": "^0.0.269",
     "rimraf": "^6.0.1",
-    "typescript": "^5.5.4",
+    "typescript": "^6.0.3",
     "vite": "^5.4.0",
     "vitest": "^2.1.8",
     "vite-plugin-web-extension": "^4.3.0",
