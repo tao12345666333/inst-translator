@@ -53,7 +53,7 @@ Dev watch mode:
 ## Build/Runtime Notes
 
 - First run may trigger model download; progress is shown in status text.
-- The in-page overlay runs in an `about:blank` iframe and injects the `src/frame.html` template + extension scripts via `chrome.runtime.getURL(...)`.
+- The in-page overlay runs in a `chrome-extension://.../src/frame.html` iframe via `chrome.runtime.getURL(...)`, keeping the UI scripts in the extension origin instead of the host page origin.
 - Resources embedded by normal pages must be listed in `web_accessible_resources` (for example `src/frame.html`, `src/popup.js`, `src/frame-boot.js`, `icons/*`).
 
 ## Project Structure
