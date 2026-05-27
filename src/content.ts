@@ -62,7 +62,7 @@ function ensureTrigger(): HTMLButtonElement {
     cursor: 'pointer',
     boxShadow: 'none',
     zIndex: '2147483646',
-    padding: '0',
+    padding: '3px',
     outline: 'none',
     appearance: 'none',
     webkitAppearance: 'none',
