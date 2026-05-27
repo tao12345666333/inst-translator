@@ -56,16 +56,16 @@ function ensureTrigger(): HTMLButtonElement {
     position: 'fixed',
     width: `${TRIGGER_SIZE}px`,
     height: `${TRIGGER_SIZE}px`,
-    borderRadius: '999px',
+    borderRadius: '0',
     border: 'none',
     background: 'transparent',
     cursor: 'pointer',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.22)',
+    boxShadow: 'none',
     zIndex: '2147483646',
     padding: '0',
     outline: 'none',
     appearance: 'none',
-      webkitAppearance: 'none',
+    webkitAppearance: 'none',
     display: 'none'
   } satisfies Partial<CSSStyleDeclaration>)
 
@@ -77,6 +77,7 @@ function ensureTrigger(): HTMLButtonElement {
     height: '100%',
     display: 'block',
     objectFit: 'contain',
+    filter: 'drop-shadow(0 2px 6px rgba(15, 23, 42, 0.2))',
     pointerEvents: 'none'
   } satisfies Partial<CSSStyleDeclaration>)
   trigger.appendChild(icon)
