@@ -5,63 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>inst-translator</title>
     <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f6fc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #dbe3f0;
+        --border-strong: #c7d2fe;
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+      }
       html, body { margin: 0; padding: 0; height: 100%; }
+      * { box-sizing: border-box; }
       body {
         font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;
         min-width: 700px;
         min-height: 600px;
-        background: #fff;
+        color: var(--text);
+        background: radial-gradient(circle at top right, #e8eeff 0, var(--bg) 42%);
       }
       .container {
-        box-sizing: border-box;
-        padding: 12px;
+        padding: 14px;
         width: 100%;
         height: 100%;
         max-width: 100vw;
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: .2px;
       }
       .row { display: flex; gap: 8px; align-items: center; }
       textarea {
         width: 100%;
-        height: 260px;
+        height: 240px;
         min-height: 140px;
         resize: vertical;
-        box-sizing: border-box;
         font-size: 14px;
-        padding: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: inherit;
       }
-      .muted { color: #666; font-size: 12px; }
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--border-strong);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+      }
+      .muted { color: var(--muted); font-size: 12px; }
       .out {
         white-space: pre-wrap;
         font-size: 14px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
         min-height: 170px;
         overflow: auto;
-        background: #fafafa;
+        background: #f8faff;
       }
-      .controls { margin: 8px 0; display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+      .controls { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+      .controls label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+      }
       .controls .grow { margin-left: auto; }
-      select, button { height: 30px; }
+      select, button {
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        padding: 0 10px;
+        background: #fff;
+        color: inherit;
+        font-size: 13px;
+      }
+      select { min-width: 108px; }
+      button {
+        cursor: pointer;
+        transition: transform .14s ease, box-shadow .14s ease, background-color .14s ease;
+      }
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 14px -12px rgba(15, 23, 42, 0.7);
+      }
+      button:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+      }
+      #runBtn {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+        font-weight: 600;
+      }
+      #runBtn:hover:not(:disabled) {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+      }
+      #stopBtn {
+        background: #fff1f2;
+        border-color: #fecdd3;
+        color: #be123c;
+      }
+      #copyBtn {
+        background: #eef2ff;
+        border-color: #c7d2fe;
+        color: #4338ca;
+      }
       .custom-prompt {
         width: 100%;
         height: 84px;
         min-height: 64px;
-        margin: 0 0 8px;
-        padding: 8px;
-        box-sizing: border-box;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+        margin: 0;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
         font-size: 13px;
         resize: vertical;
       }
+      #status { min-height: 16px; }
       .hidden { display: none; }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="row" style="justify-content: space-between;">
-<h3 style="margin: 0;">inst-translator</h3>
+      <div class="header">
+<h3 class="title">inst-translator</h3>
         <div class="muted">Chrome Built-in AI • On-device</div>
       </div>
 
