@@ -73,7 +73,7 @@ function ensureOverlay(): { created: boolean; frame: HTMLIFrameElement | null } 
 
   const frame = document.createElement('iframe')
   frame.id = 'st-overlay-frame'
-  frame.allow = 'language-model; language-detector'
+  frame.allow = 'language-model; language-detector; clipboard-write'
 
   messageHandler = (event) => {
     if (!event.data || typeof event.data !== 'object') return

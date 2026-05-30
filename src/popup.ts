@@ -76,6 +76,47 @@ function currentInputKey() {
   })
 }
 
+function copyWithExecCommand(text: string): boolean {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  textarea.style.pointerEvents = 'none'
+
+  const selection = document.getSelection()
+  const previousRanges = selection ? Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index).cloneRange()) : []
+
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+  textarea.setSelectionRange(0, text.length)
+
+  try {
+    return document.execCommand('copy')
+  } catch {
+    return false
+  } finally {
+    textarea.remove()
+    if (selection) {
+      selection.removeAllRanges()
+      previousRanges.forEach((range) => selection.addRange(range))
+    }
+  }
+}
+
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      // fall back to user-gesture copy path
+    }
+  }
+  return copyWithExecCommand(text)
+}
+
 async function persistSettings() {
   const payload: PopupSettings = {
     mode: (modeEl.value as ActionMode) || DEFAULT_ACTION_MODE,
@@ -258,10 +299,9 @@ stopBtnEl.addEventListener('click', () => {
 copyBtnEl.addEventListener('click', async () => {
   const text = outputEl.textContent || ''
   if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
+  if (await copyText(text)) {
     statusEl.textContent = 'Copied.'
-  } catch {
+  } else {
     statusEl.textContent = 'Copy failed.'
   }
 })
