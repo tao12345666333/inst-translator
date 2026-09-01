@@ -15,7 +15,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "^22.15.31",
+    "@types/node": "^26.4.0",
     "@types/chrome": "^0.0.269",
     "rimraf": "^6.0.1",
     "typescript": "^5.5.4",
